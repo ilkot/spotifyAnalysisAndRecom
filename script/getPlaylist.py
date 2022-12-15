@@ -1,4 +1,5 @@
 import pandas as pd
+pd.options.mode.chained_assignment = None
 import numpy as np
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -9,9 +10,9 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 import json
-
+import re
 #%%getCredentials
-localPath = '/Users/ilketopak/Documents/GitHub/ilkot/'
+localPath = '/Users/ilketopak/Desktop/gh/spotifyAnalysisAndRecom/'
 f = open(localPath+"creds.json")
 creds = json.load(f)
 cid = creds["cid"]
@@ -21,8 +22,16 @@ secret = creds["secret"]
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 #%%
-def getSongsFromPlaylist(playlistId,sp):
 
+def parsePlaylistId(url):
+    # Use a regular expression to extract the ID from the URL
+    match = re.search(r'https://open.spotify.com/playlist/([^\?&]+)', url)
+    
+    # Return the ID if it was found, or an empty string if not
+    return match.group(1) if match else ''
+
+
+def getSongsFromPlaylist(playlistId,sp):
     testPlaylist = sp.playlist(playlistId)
     #fetch data in lists
     artistName = []
@@ -51,15 +60,15 @@ def getSongsFromPlaylist(playlistId,sp):
     
     return artistId, trackId, playlistDf
 
+
 def getAudioFeatures(trackId,sp):
-    
     #we can get all track if list supplied in
     trackAudioFeats = sp.audio_features(trackId)
     
     audioFeatureDf = pd.DataFrame()
     for i,t in enumerate(trackAudioFeats):
         tempAudioDf = pd.DataFrame(t,index=[i]) 
-        audioFeatureDf = audioFeatureDf.append(tempAudioDf)
+        audioFeatureDf = pd.concat([audioFeatureDf,tempAudioDf])
     
     audioDropCols = ['type','uri','track_href','analysis_url','duration_ms','time_signature']
     audioFeatureDf.drop(audioDropCols,axis=1,inplace=True)
@@ -118,8 +127,6 @@ def getArtistFeatures(artistId):
 
 
 
-
-
 def orderPlaylist(playlistDf):
     #rename columns
     newColOrder = ['acousticness','artists','danceability','duration_ms','energy',
@@ -137,7 +144,8 @@ def orderPlaylist(playlistDf):
 
 
 
-def getPlaylistDf(playlistId,sp):
+def getPlaylistDf(playlist_url,sp):
+    playlistId = parsePlaylistId(playlist_url)
     artistId, trackId, playlistDf = getSongsFromPlaylist(playlistId,sp)
     audioFeatureDf = getAudioFeatures(trackId, sp)
     trackDf= getTrackFeatures(trackId)
@@ -156,13 +164,10 @@ def getPlaylistDf(playlistId,sp):
 
 
 #%%
-playlistId = '041ef61Og4SZJdhTauuJol'
-playlistDf = getPlaylistDf(playlistId,sp)
-
-
+playlist_url = 'https://open.spotify.com/playlist/37i9dQZF1DWWM6GBnxtToT?si=917bbfe6b4774233'
+playlistDf = getPlaylistDf(playlist_url,sp)
 
 
 #%%
-
 
 
