@@ -163,7 +163,7 @@ def getPlaylistDf(playlist_url,sp):
     return playlistDf
 
 
-#%%
+#%%test
 playlist_url = 'https://open.spotify.com/playlist/37i9dQZF1DWWM6GBnxtToT?si=917bbfe6b4774233'
 playlistDf = getPlaylistDf(playlist_url,sp)
 
